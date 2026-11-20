@@ -220,32 +220,14 @@ x-icon svg { width: 100%; height: 100%; display: block; }
 body.presentar { overflow: hidden; height: 100vh; height: 100dvh; }
 body.presentar .hoja { position: fixed; left: var(--x); top: var(--y); width: var(--w); height: var(--h); opacity: 0; pointer-events: none; transition: opacity .45s ease; }
 body.presentar .hoja.activo { opacity: 1; pointer-events: auto; z-index: 1; }
-/* ver todo */
-body.todo .hoja { width: var(--w); height: var(--h); margin: 0 auto 14px; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
-body.todo #pila { padding: 70px 0 90px; }
+body.presentar.quieto { cursor: none; }
+/* celular: una diapositiva tras otra */
+body.todo .hoja { width: var(--w); height: var(--h); margin: 0 auto 8px; }
 body.todo .fragment { opacity: 1; transform: none; }
 body.todo .fragment.armada { opacity: 0; }
-/* barra */
-#barra { position: fixed; z-index: 10; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: center; gap: 6px;
-  background: rgba(10,16,28,.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(143,217,255,.22); border-radius: 999px; padding: 6px;
-  font: 600 14px/1 'Inter', system-ui, sans-serif; color: #fff; transition: opacity .4s; }
-#barra button { all: unset; cursor: pointer; padding: 10px 14px; border-radius: 999px; white-space: nowrap; }
-#barra button:hover, #barra button:focus-visible { background: rgba(143,217,255,.18); }
-#barra .cta { background: #E8822A; }
-#cuenta { min-width: 64px; text-align: center; color: #B9C7DE; font-variant-numeric: tabular-nums; }
-body.todo #cuenta, body.todo #ant, body.todo #sig, body.todo #pc { display: none; }
-body.quieto #barra { opacity: 0; }
-#progreso { position: fixed; z-index: 10; left: 0; top: 0; height: 3px; background: #E8822A; width: 0; transition: width .35s ease; }
-body.todo #progreso { display: none; }
-#encabezado { display: none; }
-body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 auto 0; height: 54px; align-items: center; justify-content: center; gap: 10px;
-  background: rgba(5,6,8,.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff; font: 600 15px/1 'Poppins', system-ui, sans-serif; letter-spacing: .02em; }
-#encabezado span { color: #8FD9FF; font-weight: 500; }
 </style>
 </head>
 <body>
-<div id="progreso"></div>
-<div id="encabezado">HAND-E <span>· Pitch</span></div>
 <div id="pila">
 <div class="hoja" data-id="cover"><div class="lienzo">
 <section id="cover" class="oscuro" data-transition="fade" style="background:#050608">
@@ -431,13 +413,6 @@ body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 
 </section>
 </div></div>
 </div>
-<nav id="barra" aria-label="Controles de la presentación">
-  <button id="ant" aria-label="Anterior">‹</button>
-  <span id="cuenta">1 / 13</span>
-  <button id="sig" aria-label="Siguiente">›</button>
-  <button id="modo" class="cta">Ver todo</button>
-  <button id="pc" aria-label="Pantalla completa">⛶</button>
-</nav>
 <script>
 (() => {
   const hojas = [...document.querySelectorAll('.hoja')], N = hojas.length, root = document.documentElement, body = document.body;
@@ -453,7 +428,7 @@ body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 
     const vw = root.clientWidth, vh = window.innerHeight;
     let w, h;
     if (modo === 'presentar') { w = Math.min(vw, vh * 16 / 9); h = w * 9 / 16; root.style.setProperty('--x', (vw - w) / 2 + 'px'); root.style.setProperty('--y', (vh - h) / 2 + 'px'); }
-    else { w = Math.min(vw - 16, 1280); h = w * 9 / 16; }
+    else { w = Math.min(vw, 1280); h = w * 9 / 16; }
     root.style.setProperty('--w', w + 'px'); root.style.setProperty('--h', h + 'px'); root.style.setProperty('--s', w / 1920);
   }
   function pintar() {
@@ -462,8 +437,6 @@ body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 
       pasos[i].forEach((g, j) => g.forEach((f) => f.classList.toggle('visible', i < k || (on && j < p))));
       vids(h).forEach((v) => { if (on) { v.play().catch(() => {}); } else { v.pause(); } });
     });
-    document.getElementById('cuenta').textContent = (k + 1) + ' / ' + N;
-    document.getElementById('progreso').style.width = ((k + p / Math.max(1, pasos[k].length)) / N * 100) + '%';
     history.replaceState(null, '', '#' + (k + 1));
   }
   function ir(nk, np) { k = Math.max(0, Math.min(N - 1, nk)); p = np === 'fin' ? pasos[k].length : 0; if (k !== nk) p = nk < 0 ? 0 : pasos[k].length; hojas[k].querySelectorAll('video').forEach((v) => { v.currentTime = 0; }); pintar(); }
@@ -477,20 +450,15 @@ body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 
   }), { threshold: 0.35 });
   function poner(m) {
     modo = m; body.className = m;
-    document.getElementById('modo').textContent = m === 'presentar' ? 'Ver todo' : 'Presentar';
     medir();
     if (m === 'presentar') { io.disconnect(); window.scrollTo(0, 0); pintar(); }
     else { hojas.forEach((h) => { h.classList.remove('activo'); pasos[hojas.indexOf(h)].flat().forEach((f) => f.classList.add('visible')); io.observe(h); }); hojas[k].scrollIntoView({ block: 'center' }); }
   }
-  document.getElementById('sig').onclick = (e) => { e.stopPropagation(); sig(); };
-  document.getElementById('ant').onclick = (e) => { e.stopPropagation(); ant(); };
-  document.getElementById('modo').onclick = (e) => { e.stopPropagation(); poner(modo === 'presentar' ? 'todo' : 'presentar'); };
-  document.getElementById('pc').onclick = (e) => { e.stopPropagation(); if (document.fullscreenElement) document.exitFullscreen(); else root.requestFullscreen && root.requestFullscreen().catch(() => {}); };
   document.addEventListener('keydown', (e) => {
-    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); sig(); }
-    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); ant(); }
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { if (modo === 'presentar') e.preventDefault(); sig(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { if (modo === 'presentar') e.preventDefault(); ant(); }
     else if (e.key === 'Home') ir(0); else if (e.key === 'End') ir(N - 1, 'fin');
-    else if (e.key === 'f' || e.key === 'F') document.getElementById('pc').click();
+    else if (e.key === 'f' || e.key === 'F') { if (document.fullscreenElement) document.exitFullscreen(); else if (root.requestFullscreen) root.requestFullscreen().catch(() => {}); }
   });
   document.getElementById('pila').addEventListener('click', (e) => { if (modo !== 'presentar') return; (e.clientX < root.clientWidth * 0.3 ? ant : sig)(); });
   let x0 = null;
@@ -498,9 +466,11 @@ body.todo #encabezado { display: flex; position: fixed; z-index: 10; inset: 0 0 
   document.addEventListener('touchend', (e) => { if (x0 === null || modo !== 'presentar') return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) (dx < 0 ? sig : ant)(); x0 = null; }, { passive: true });
   let quieto; const mover = () => { body.classList.remove('quieto'); clearTimeout(quieto); quieto = setTimeout(() => { if (modo === 'presentar') body.classList.add('quieto'); }, 2500); };
   ['mousemove', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, mover, { passive: true }));
-  window.addEventListener('resize', medir);
+  // computadora o celular acostado: una a la vez; celular parado: una tras otra
+  const elegir = () => (root.clientWidth < 760 || root.clientWidth < window.innerHeight ? 'todo' : 'presentar');
+  window.addEventListener('resize', () => { const m = elegir(); if (m !== modo) poner(m); else medir(); });
   const n0 = parseInt(location.hash.slice(1), 10); if (n0 >= 1 && n0 <= N) k = n0 - 1;
-  poner(root.clientWidth < 760 || root.clientWidth < window.innerHeight ? 'todo' : 'presentar');
+  poner(elegir());
   mover();
 })();
 </script>
